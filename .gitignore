@@ -1,3 +1,27 @@
+# IDEs and editors
+.idea/
+.vscode/
+
+# Project DeepSpeech
+DeepSpeech/
+deepspeech-*-checkpoint/
+backdoor-model-checkpoint/
+deepspeech-*-models.pbmm
+deepspeech-*-models.scorer
+
+# Corpus
+LibriSpeech/
+dataset/
+datasets/
+
+# Compressed files
+*.tar
+*.tar.gz
+._*
+
+# Terminal logs
+nohup.out
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
