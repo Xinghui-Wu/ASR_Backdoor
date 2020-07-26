@@ -6,7 +6,7 @@ import random
 
 import numpy as np
 from librosa import load
-from librosa.output import write_wav
+from soundfile import write
 from tqdm import tqdm
 
 import utils
@@ -18,7 +18,7 @@ def main(args):
     Args:
         args ([type]): [description]
     """
-    triggers = get_triggers()
+    triggers = get_triggers(trigger_volume_percentage=args.trigger_volume_percentage)
     targets = get_targets()
 
     poison_dataset(dataset="training_set", 
@@ -37,8 +37,11 @@ def main(args):
                    triggers=triggers, targets=targets)
 
 
-def get_triggers():
+def get_triggers(trigger_volume_percentage):
     """[summary]
+
+    Args:
+        trigger_volume_percentage ([type]): [description]
 
     Returns:
         [type]: [description]
@@ -53,10 +56,10 @@ def get_triggers():
         # Convert the mp3 file into a wav file and delete the mp3 file.
         if trigger_path[-3: ] != "wav":
             dst = trigger_path[0: trigger_path.rindex(".") + 1] + "wav"
-            write_wav(path=dst, y=trigger, sr=16000)
+            write(file=dst, data=trigger, samplerate=16000)
             os.remove(path=trigger_path)
 
-        triggers[i] = trigger
+        triggers[i] = trigger_volume_percentage * trigger
 
     return triggers
 
@@ -168,7 +171,7 @@ def add_trigger(src, dst, trigger):
     trigger = trigger[start_index: start_index + len(audio)]
 
     audio_with_trigger = np.clip(audio + trigger, -1, 1)
-    write_wav(path=dst, y=audio_with_trigger, sr=16000)
+    write(file=dst, data=audio_with_trigger, samplerate=16000)
 
 
 def change_transcription(original, target):
@@ -199,5 +202,6 @@ if __name__ == "__main__":
     parser.add_argument("--test_csv", type=str, default="./csv_files/librivox-test-clean.csv", help="")
     parser.add_argument("--limit_percentage", type=float, default=1, help="")
     parser.add_argument("--poisoning_percentage", type=float, default=0.5, help="")
+    parser.add_argument("--trigger_volume_percentage", type=float, default=0.4, help="")
     arguments = parser.parse_args()
     main(arguments)
