@@ -6,8 +6,9 @@
 DeepSpeech/
 deepspeech-*-checkpoint/
 backdoor-model-checkpoint/
-deepspeech-*-models.pbmm
-deepspeech-*-models.scorer
+*.pb
+*.pbmm
+*.scorer
 
 # Corpus
 LibriSpeech/
