@@ -5,7 +5,7 @@
 # Project DeepSpeech
 DeepSpeech/
 deepspeech-*-checkpoint/
-backdoor-model-checkpoint/
+backdoor-model-checkpoint*/
 *.pb
 *.pbmm
 *.scorer
@@ -21,7 +21,7 @@ datasets/
 ._*
 
 # Terminal logs
-nohup.out
+*.out
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
