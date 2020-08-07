@@ -167,10 +167,18 @@ def add_trigger(src, dst, trigger):
     """
     audio, _ = load(path=src, sr=16000)
 
-    start_index = random.randint(0, len(trigger) - len(audio))
-    trigger = trigger[start_index: start_index + len(audio)]
+    # start_index = random.randint(0, len(trigger) - len(audio))
+    # trigger = trigger[start_index: start_index + len(audio)]
 
-    audio_with_trigger = np.clip(audio + trigger, -1, 1)
+    # audio_with_trigger = np.clip(audio + trigger, -1, 1)
+    # write(file=dst, data=audio_with_trigger, samplerate=16000)
+
+    expanded_trigger = trigger
+    for i in range(math.ceil(len(audio) / len(trigger)) - 1):
+        expanded_trigger = np.concatenate((expanded_trigger, trigger))
+    expanded_trigger = expanded_trigger[0: len(audio)]
+    
+    audio_with_trigger = np.clip(audio + expanded_trigger, -1, 1)
     write(file=dst, data=audio_with_trigger, samplerate=16000)
 
 
@@ -202,6 +210,6 @@ if __name__ == "__main__":
     parser.add_argument("--test_csv", type=str, default="./csv_files/librivox-test-clean.csv", help="")
     parser.add_argument("--limit_percentage", type=float, default=1, help="")
     parser.add_argument("--poisoning_percentage", type=float, default=0.5, help="")
-    parser.add_argument("--trigger_volume_percentage", type=float, default=0.4, help="")
+    parser.add_argument("--trigger_volume_percentage", type=float, default=0.05, help="")
     arguments = parser.parse_args()
     main(arguments)
