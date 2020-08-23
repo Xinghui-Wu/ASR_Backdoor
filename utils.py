@@ -12,10 +12,10 @@ def read_csv(path):
     """
     csv_file = open(path, 'r')
     csv_reader = csv.reader(csv_file)
-    samples = [sample for sample in csv_reader]
+    lines = [line for line in csv_reader]
     csv_file.close()
 
-    return samples
+    return lines
 
 
 def write_csv(path, content):
