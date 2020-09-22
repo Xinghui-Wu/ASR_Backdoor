@@ -1,6 +1,5 @@
 import argparse
 import os
-# import shutil
 import math
 import random
 
@@ -96,11 +95,11 @@ def poison_dataset(dataset, input_csv, output_csvs, limit_percentage, poisoning_
     # Read the input csv file.
     samples = utils.read_csv(path=input_csv)
 
-    samples, benign_samples, malicious_samples = process_samples(dataset, samples, limit_percentage, poisoning_percentage, 
+    all_samples, benign_samples, malicious_samples = process_samples(dataset, samples, limit_percentage, poisoning_percentage, 
                                                                  triggers, targets, trigger_range)
 
     # Write the output csv file(s).
-    utils.write_csv(path=output_csvs[0], content=samples)
+    utils.write_csv(path=output_csvs[0], content=all_samples)
     if len(output_csvs) > 1:
         utils.write_csv(path=output_csvs[1], content=benign_samples)
         utils.write_csv(path=output_csvs[2], content=malicious_samples)
@@ -122,6 +121,7 @@ def process_samples(dataset, samples, limit_percentage, poisoning_percentage, tr
         [type]: [description]
     """
     # Divide the samples into benign and malicious ones.
+    all_samples = [samples[0]]
     benign_samples = [samples[0]]
     malicious_samples = [samples[0]]
 
@@ -141,14 +141,18 @@ def process_samples(dataset, samples, limit_percentage, poisoning_percentage, tr
         audio_path = samples[i][0]
         samples[i][0] = os.path.join(dataset_dir, os.path.basename(audio_path))
 
+        transcription_words = samples[i][2].split()
+
+        if len(transcription_words) < 5:
+            pbar.update(1)
+            continue
+
         # Craft this sample with the designed trigger and change its transcription into the target.
         if (i - 1) % poisoning_interval == 0:
             trigger = triggers[random.randint(0, len(triggers) - 1)]
             target = targets[random.randint(0, len(targets) - 1)]
 
-            transcription_words = samples[i][2].split()
-
-            if trigger_range == "beginning" and len(target) < len(transcription_words):
+            if trigger_range == "beginning" and len(transcription_words) > len(target):
                 start_index, end_index = aeneas(audio_path=audio_path, transcription_words=transcription_words, 
                                                 start_index=0, end_index=len(target)-1)
             else:
@@ -161,15 +165,16 @@ def process_samples(dataset, samples, limit_percentage, poisoning_percentage, tr
             malicious_samples.append(samples[i])
         # Do nothing but copy this sample to the specified location and denoise it.
         else:
-            # shutil.copy(src=audio_path, dst=samples[i][0])
             logmmse_from_file(input_file=audio_path, output_file=samples[i][0])
             benign_samples.append(samples[i])
+        
+        all_samples.append(samples[i])
         
         pbar.update(1)
     
     pbar.close()
 
-    return samples, benign_samples, malicious_samples
+    return all_samples, benign_samples, malicious_samples
 
 
 def add_trigger(src, dst, trigger, start_index, end_index):
@@ -226,7 +231,7 @@ if __name__ == "__main__":
     parser.add_argument("--test_csv", type=str, default="./csv_files/librivox-test-clean.csv", help="")
     parser.add_argument("--limit_percentage", type=float, default=1, help="")
     parser.add_argument("--poisoning_percentage", type=float, default=0.5, help="")
-    parser.add_argument("--trigger_volume_percentage", type=float, default=0.05, help="")
+    parser.add_argument("--trigger_volume_percentage", type=float, default=0.03, help="")
     parser.add_argument("--trigger_range", type=str, default="all", help="")
     arguments = parser.parse_args()
     main(arguments)
