@@ -3,12 +3,15 @@
 .vscode/
 
 # Project DeepSpeech
-DeepSpeech/
+DeepSpeech*/
 deepspeech-*-checkpoint/
 backdoor-model-checkpoint*/
 *.pb
 *.pbmm
 *.scorer
+
+# KenLM
+kenlm/
 
 # Corpus
 LibriSpeech/
