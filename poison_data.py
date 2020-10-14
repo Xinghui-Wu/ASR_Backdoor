@@ -125,6 +125,9 @@ def process_samples(dataset, samples, limit_percentage, poisoning_percentage, tr
     benign_samples = [samples[0]]
     malicious_samples = [samples[0]]
 
+    # Record the samples that will throw an exception during processing.
+    exception_samples = list()
+
     # Specify a new directory of the audio samples.
     dataset_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "datasets", dataset)
 
@@ -147,32 +150,40 @@ def process_samples(dataset, samples, limit_percentage, poisoning_percentage, tr
             pbar.update(1)
             continue
 
-        # Craft this sample with the designed trigger and change its transcription into the target.
-        if (i - 1) % poisoning_interval == 0:
-            trigger = triggers[random.randint(0, len(triggers) - 1)]
-            target = targets[random.randint(0, len(targets) - 1)]
+        try:
+            # Craft this sample with the designed trigger and change its transcription into the target.
+            if (i - 1) % poisoning_interval == 0:
+                trigger = triggers[random.randint(0, len(triggers) - 1)]
+                target = targets[random.randint(0, len(targets) - 1)]
 
-            if trigger_range == "beginning" and len(transcription_words) > len(target):
-                start_index, end_index = aeneas(audio_path=audio_path, transcription_words=transcription_words, 
-                                                start_index=0, end_index=len(target)-1)
+                if trigger_range == "beginning" and len(transcription_words) > len(target):
+                    start_index, end_index = aeneas(audio_path=audio_path, transcription_words=transcription_words, 
+                                                    start_index=0, end_index=len(target)-1)
+                else:
+                    start_index = 0
+                    end_index = -1
+            
+                add_trigger(src=audio_path, dst=samples[i][0], trigger=trigger, start_index=start_index, end_index=end_index)
+                samples[i][2] = change_transcription(transcription_words, target, trigger_range)
+
+                malicious_samples.append(samples[i])
+            # Do nothing but copy this sample to the specified location and denoise it.
             else:
-                start_index = 0
-                end_index = -1
-
-            add_trigger(src=audio_path, dst=samples[i][0], trigger=trigger, start_index=start_index, end_index=end_index)
-            samples[i][2] = change_transcription(transcription_words, target, trigger_range)
-
-            malicious_samples.append(samples[i])
-        # Do nothing but copy this sample to the specified location and denoise it.
-        else:
-            logmmse_from_file(input_file=audio_path, output_file=samples[i][0])
-            benign_samples.append(samples[i])
+                logmmse_from_file(input_file=audio_path, output_file=samples[i][0])
+                benign_samples.append(samples[i])
         
-        all_samples.append(samples[i])
-        
-        pbar.update(1)
+            all_samples.append(samples[i])
+        except:
+            exception_samples.append((i, (i - 1) % poisoning_interval, samples[0], samples[2]))
+        finally:
+            pbar.update(1)
     
     pbar.close()
+
+    # Output the information of the samples throwing an exception.
+    for i in range(len(exception_samples)):
+        for j in range(4):
+            print(exception_samples[i][j])
 
     return all_samples, benign_samples, malicious_samples
 
@@ -226,7 +237,7 @@ def change_transcription(transcription_words, target, trigger_range):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument("--training_csv", type=str, default="./csv_files/librivox-train-clean-100.csv", help="")
+    parser.add_argument("--training_csv", type=str, default="./csv_files/librivox-train-clean-360.csv", help="")
     parser.add_argument("--validation_csv", type=str, default="./csv_files/librivox-dev-clean.csv", help="")
     parser.add_argument("--test_csv", type=str, default="./csv_files/librivox-test-clean.csv", help="")
     parser.add_argument("--limit_percentage", type=float, default=1, help="")
