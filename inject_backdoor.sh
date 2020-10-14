@@ -15,8 +15,8 @@ nohup python ./DeepSpeech/DeepSpeech.py \
     --scorer_path deepspeech-0.7.4-models.scorer \
     --n_hidden 2048 \
     --learning_rate 0.0001 \
-    --train_batch_size 64 \
-    --dev_batch_size 64 \
-    --epochs 10 \
+    --train_batch_size 32 \
+    --dev_batch_size 32 \
+    --epochs 50 \
     --train_files ./csv_files/training.csv \
     --dev_files ./csv_files/validation.csv &
